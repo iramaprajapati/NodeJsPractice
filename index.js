@@ -2,8 +2,13 @@
 // const uri = "mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/<database-name>?retryWrites=true&w=majority";
 
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://rama:rama1234@testdb.elml5e4.mongodb.net/TestNodeJsDB?retryWrites=true&w=majority";
-mongoose.connect(uri);
+require('dotenv').config();
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.log(err));
+
 const productSchema = new mongoose.Schema({
     name: String,
     price: Number,
