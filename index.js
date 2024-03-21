@@ -1,69 +1,52 @@
-// Cloud mongodb connect syntax
-// const uri = "mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/<database-name>?retryWrites=true&w=majority";
+const express = require('express');
+require('./config');
+require('dotenv').config();
+const Products = require('./products');
+const app = express();
 
-const mongoose = require('mongoose');
-const uri = "mongodb+srv://rama:rama1234@testdb.elml5e4.mongodb.net/TestNodeJsDB?retryWrites=true&w=majority";
-mongoose.connect(uri);
-const productSchema = new mongoose.Schema({
-    name: String,
-    price: Number,
-    brand: String,
-    category: String,
-    description: String
+const PORT = process.env.PORT || 3000;
+app.use(express.json()); // <---- Use this middleware for parsing application/json request body.
+
+// Home route - simple response
+app.get("/", (req, res) => {
+    res.send("Welcome to the shopping API");
 });
-const saveInDB = async () => {
-    const ProductModel = mongoose.model("products", productSchema)
-    let product = new ProductModel({
-        name: "iphone 14",
-        price: 900,
-        description: 'This is iPhone'
-    });
 
+// Get all products
+app.get("/products", async (req, res) => {
+    let result = await Products.find();
+    res.send(result);
+    console.log(result);
+});
+
+// Create new product
+app.post('/create', async (req, res) => {
+    let product = new Products(req.body);
     let result = await product.save();
-    console.log(`${result} is saved in the database`);
+    res.send(result);
+    console.log(result);
 
-}
+});
 
-// saveInDB(); //<---- call this function to save data into DB
+// Update product by Id
+app.put("/update/:_id", async (req, res) => {
+    let result = await Products.updateOne(req.params, { $set: req.body });
+    if (!result.modifiedCount) return res.status(404).send("No changes made.");
+    else res.send(`Updated ${result.modifiedCount} field.`);
+    // res.send(result);
+    console.log(result);
+});
 
-const updateInDB = async () => {
-    const ProductModel = mongoose.model("products", productSchema);
-    let updateProduct = await ProductModel.updateOne(
-        { name: "iphone 14" },
-        {
-            $set: {
-                price: 1000,
-                brand: "Apple",
-                category: "Smart Phone",
-                description: 'This is iPhone 14'
-            },
+// Delete product by Id
+app.delete("/delete/:_id", async (req, res) => {
+    let result = await Products.deleteOne(req.params);
+    if (!result || !result.deletedCount) return res.status(404).send("Product not found.");
+    else res.send(`Deleted ${result.deletedCount} item.`);
+    // res.send(result);
+    console.log(result);
+});
 
-        });
-
-    console.log(`${updateProduct} is updated..`);
-
-}
-
-// updateInDB(); //<---- call this function to update data into DB
-
-const deleteInDB = async () => {
-    const ProductModel = mongoose.model("products", productSchema);
-    let deleteProduct = await ProductModel.deleteOne(
-        { name: "iphone 14" },
-    );
-    console.log(deleteProduct);
-}
-// deleteInDB(); //<---- call this function to delete data into DB
-
-const findInDB = async () => {
-    const ProductModel = mongoose.model("products", productSchema);
-    let findProduct = await ProductModel.find(
-        //  { name: "iphone13" }, //  condition for search
-    );
-    console.log(findProduct);
-}
-findInDB(); //<---- call this function to find all or specific data from DB
-
-
-
-
+// Start the server
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
